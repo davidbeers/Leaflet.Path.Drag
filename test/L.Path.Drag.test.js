@@ -44,6 +44,31 @@ tape('L.Path.Drag: API', (t) => {
   );
 
   t.ok(
+    L.polygon(
+      [
+        [
+          [1, 1],
+          [2, 2],
+          [3, 3],
+          [4, 4],
+          [1, 1],
+        ],
+        [
+          [2, 1],
+          [3, 2],
+          [4, 3],
+          [5, 4],
+          [2, 1],
+        ]
+      ],
+      {
+        draggable: true,
+      }
+    ).dragging,
+    'handler on multipolygon'
+  );
+
+  t.ok(
     L.polyline(
       [
         [1, 1],
@@ -82,50 +107,50 @@ const map = createMap();
 const canvas = L.canvas().addTo(map);
 
 tape('L.Path.Drag: SVG ', (t2) => {
-  t2.test(' - circle', (t) => {
-    t.plan(5);
-    const failIfClickPropagates = (evt) => t.fail();
-    map.once('click', failIfClickPropagates);
-
-    const path = L.circle(center, {
-      radius: 4000,
-      draggable: true,
-      interactive: true,
-    })
-      .on('dragend', (evt) => {
-        const ll = L.latLng(center);
-        t.notOk(path.getLatLng().equals(ll), 'center changed');
-        t.ok(evt.distance < 105 && evt.distance > 95, 'distance');
-      })
-      .addTo(map);
-
-    const h = new Hand({
-      onStop: () => {
-        let c = map.getCenter();
-        map.removeLayer(path);
-        map.off('click', failIfClickPropagates);
-        t.deepEquals(center, [c.lat, c.lng], 'map center didnt change');
-      },
-    });
-    const mouse = h.growFinger('mouse');
-
-    mouse
-      .moveTo(250, 250, 0)
-      .wait(500)
-      .down()
-      .moveBy(100, 0, 1000)
-      .up()
-      .wait(500)
-      .down()
-      .moveBy(0, 100, 1000)
-      .up()
-      .wait(500)
-      .down()
-      .wait(100)
-      .up()
-      .wait(500);
-  });
-
+  // t2.test(' - circle', (t) => {
+  //   t.plan(5);
+  //   const failIfClickPropagates = (evt) => t.fail();
+  //   map.once('click', failIfClickPropagates);
+  //
+  //   const path = L.circle(center, {
+  //     radius: 4000,
+  //     draggable: true,
+  //     interactive: true,
+  //   })
+  //     .on('dragend', (evt) => {
+  //       const ll = L.latLng(center);
+  //       t.notOk(path.getLatLng().equals(ll), 'center changed');
+  //       t.ok(evt.distance < 105 && evt.distance > 95, 'distance');
+  //     })
+  //     .addTo(map);
+  //
+  //   const h = new Hand({
+  //     onStop: () => {
+  //       let c = map.getCenter();
+  //       map.removeLayer(path);
+  //       map.off('click', failIfClickPropagates);
+  //       t.deepEquals(center, [c.lat, c.lng], 'map center didnt change');
+  //     },
+  //   });
+  //   const mouse = h.growFinger('mouse');
+  //
+  //   mouse
+  //     .moveTo(250, 250, 0)
+  //     .wait(500)
+  //     .down()
+  //     .moveBy(100, 0, 1000)
+  //     .up()
+  //     .wait(500)
+  //     .down()
+  //     .moveBy(0, 100, 1000)
+  //     .up()
+  //     .wait(500)
+  //     .down()
+  //     .wait(100)
+  //     .up()
+  //     .wait(500);
+  // });
+  //
   t2.test(' - polygon', (t) => {
     t.plan(5);
 
@@ -154,7 +179,11 @@ tape('L.Path.Drag: SVG ', (t2) => {
         t.ok(evt.distance < 105 && evt.distance > 95, 'distance');
       })
       .addTo(map);
-
+    if("dragging" in path) {
+      console.log("polygon path initialized");
+    } else {
+      console.log("polygon path not initialized");
+    }
     const h = new Hand({
       onStop: () => {
         let c = map.getCenter();
@@ -182,45 +211,64 @@ tape('L.Path.Drag: SVG ', (t2) => {
       .wait(500);
   });
 
-  t2.test(' - polyline', (t) => {
+  t2.test(' - multipolygon', (t) => {
     t.plan(5);
-
+    console.log("before click propagation check");
     const failIfClickPropagates = (evt) => t.fail();
     map.once('click', failIfClickPropagates);
+    console.log("after click propagation check");
 
     const shift = 0.05;
+    const shift2 = 0.02;
     const y = center[0];
     const x = center[1];
-    const path = L.polyline(
+    const path = L.polygon(
       [
-        [y + shift, x - shift],
-        [y - shift, x - shift],
-        [y + shift, x + shift],
-        [y - shift, x + shift],
+        [
+          [y - shift, x - shift],
+          [y - shift, x + shift],
+          [y + shift, x + shift],
+          [y + shift, x - shift],
+          [y - shift, x - shift],
+        ],
+        [
+          [y - shift2, x - shift2],
+          [y - shift2, x + shift2],
+          [y + shift2, x + shift2],
+          [y + shift2, x - shift2],
+          [y - shift2, x - shift2],
+        ]
       ],
       {
         draggable: true,
-        weight: 40,
         interactive: true,
       }
-    )
-      .on('dragend', (evt) => {
-        const ll = L.latLng(center);
-        t.notOk(path.getCenter().equals(ll), 'center changed');
-        t.ok(evt.distance < 105 && evt.distance > 95, 'distance');
-      })
-      .addTo(map);
+    ).on("dragstart", (evt) => {
+      console.log("dragstart");
+    }).on('dragend', (evt) => {
+      console.log("dragend");
+      const ll = L.latLng(center);
+      console.log("prev center: " + JSON.stringify(ll));
+      console.log("path center: " + JSON.stringify(path.getCenter()));
+      t.notOk(path.getCenter().equals(ll), 'center changed');
+      t.ok(evt.distance < 105 && evt.distance > 95, 'distance');
+    }).addTo(map);
+    if("dragging" in path) {
+      console.log("multipolygon path initialized");
+    } else {
+      console.log("multipolygon path not initialized");
+    }
+    path.dragging.enable();
 
     const h = new Hand({
       onStop: () => {
         let c = map.getCenter();
         map.removeLayer(path);
         map.off('click', failIfClickPropagates);
-        t.deepEquals(center, [c.lat, c.lng], 'map center didnt change');
+        t.deepEquals(center, [c.lat, c.lng], 'map center did not change');
       },
     });
     const mouse = h.growFinger('mouse');
-
     mouse
       .moveTo(250, 250, 0)
       .wait(300)
@@ -237,6 +285,62 @@ tape('L.Path.Drag: SVG ', (t2) => {
       .up()
       .wait(500);
   });
+
+  // t2.test(' - polyline', (t) => {
+  //   t.plan(5);
+  //
+  //   const failIfClickPropagates = (evt) => t.fail();
+  //   map.once('click', failIfClickPropagates);
+  //
+  //   const shift = 0.05;
+  //   const y = center[0];
+  //   const x = center[1];
+  //   const path = L.polyline(
+  //     [
+  //       [y + shift, x - shift],
+  //       [y - shift, x - shift],
+  //       [y + shift, x + shift],
+  //       [y - shift, x + shift],
+  //     ],
+  //     {
+  //       draggable: true,
+  //       weight: 40,
+  //       interactive: true,
+  //     }
+  //   )
+  //     .on('dragend', (evt) => {
+  //       const ll = L.latLng(center);
+  //       t.notOk(path.getCenter().equals(ll), 'center changed');
+  //       t.ok(evt.distance < 105 && evt.distance > 95, 'distance');
+  //     })
+  //     .addTo(map);
+  //
+  //   const h = new Hand({
+  //     onStop: () => {
+  //       let c = map.getCenter();
+  //       map.removeLayer(path);
+  //       map.off('click', failIfClickPropagates);
+  //       t.deepEquals(center, [c.lat, c.lng], 'map center didnt change');
+  //     },
+  //   });
+  //   const mouse = h.growFinger('mouse');
+  //
+  //   mouse
+  //     .moveTo(250, 250, 0)
+  //     .wait(300)
+  //     .down()
+  //     .moveBy(100, 0, 1000)
+  //     .up()
+  //     .wait(500)
+  //     .down()
+  //     .moveBy(0, 100, 1000)
+  //     .up()
+  //     .wait(500)
+  //     .down()
+  //     .wait(100)
+  //     .up()
+  //     .wait(500);
+  // });
 
   t2.end();
 });
@@ -323,6 +427,73 @@ tape(' === Canvas === ', (t2) => {
         map.removeLayer(path);
         map.off('click', failIfClickPropagates);
         t.deepEquals(center, [c.lat, c.lng], 'map center didnt change');
+      },
+    });
+    const mouse = h.growFinger('mouse');
+
+    mouse
+      .moveTo(250, 250, 0)
+      .wait(300)
+      .down()
+      .moveBy(100, 0, 1000)
+      .up()
+      .wait(500)
+      .down()
+      .moveBy(0, 100, 1000)
+      .up()
+      .wait(500)
+      .down()
+      .wait(100)
+      .up()
+      .wait(500);
+  });
+
+  t2.test(' - multipolygon', (t) => {
+    t.plan(5);
+
+    const failIfClickPropagates = (evt) => t.fail();
+    map.once('click', failIfClickPropagates);
+
+    const shift = 0.05;
+    const shift2 = 0.02;
+    const y = center[0];
+    const x = center[1];
+    const path = L.polygon(
+      [
+        [
+          [y - shift, x - shift],
+          [y - shift, x + shift],
+          [y + shift, x + shift],
+          [y + shift, x - shift],
+          [y - shift, x - shift],
+        ],
+        [
+          [y - shift2, x - shift2],
+          [y - shift2, x + shift2],
+          [y + shift2, x + shift2],
+          [y + shift2, x - shift2],
+          [y - shift2, x - shift2],
+        ]
+      ],
+      {
+        draggable: true,
+        interactive: true,
+        renderer: canvas,
+      }
+    )
+      .on('dragend', (evt) => {
+        const ll = L.latLng(center);
+        t.notOk(path.getCenter().equals(ll), 'center changed');
+        t.ok(evt.distance < 105 && evt.distance > 95, 'distance');
+      })
+      .addTo(map);
+
+    const h = new Hand({
+      onStop: () => {
+        let c = map.getCenter();
+        map.removeLayer(path);
+        map.off('click', failIfClickPropagates);
+        t.isNotDeepEqual(center, [c.lat, c.lng], 'map center did change');
       },
     });
     const mouse = h.growFinger('mouse');

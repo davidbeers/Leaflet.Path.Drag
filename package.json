@@ -9,7 +9,7 @@
     "src/**/*.js"
   ],
   "scripts": {
-    "test": "browserify --transform [ babelify --presets [ es2015 ] ] ./test/*.test.js | tape-run --render='tap-spec' | tap-status",
+    "test": "browserify --transform [ babelify --presets [ es2015 ] ] ./test/*.test.js | tape-run | tap-status",
     "start": "npm run watch & npm run server",
     "server": "http-server -p 3002",
     "lint": "eslint ./src/",
